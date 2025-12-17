@@ -77,6 +77,44 @@ O coeficiente negativo de `covid_incentive` (-0.23) indica que:
 3. **Aperto de crédito** → bancos mais conservadores
 4. **Atrasos operacionais** → escritórios e cartórios fechados
 
+## Contexto Histórico: Modelagem de Pré-Pagamento
+
+### Origem dos Modelos de Prepayment (1980s)
+
+O mercado de títulos lastreados em hipotecas (MBS) nos EUA cresceu rapidamente nos anos 1980 após a criação do mercado secundário pela Ginnie Mae, Fannie Mae e Freddie Mac. O principal desafio era **precificar o risco de pré-pagamento**: quando taxas de juros caem, mutuários refinanciam, e investidores recebem o principal de volta mais cedo que o esperado.
+
+### O Modelo Richard & Roll (1989)
+
+| Aspecto | Detalhes |
+|---------|----------|
+| **Autores** | Scott F. Richard e Richard Roll |
+| **Instituição** | Goldman Sachs |
+| **Publicação** | "Prepayments on Fixed-Rate Mortgage-Backed Securities" (1989) |
+| **Problema** | Prever taxas de pré-pagamento para precificação de MBS |
+
+#### Inovações do Modelo:
+
+1. **Incentivo de Refinanciamento**: Razão entre taxa do contrato e taxa de mercado
+2. **Seasoning (Idade)**: Empréstimos novos prepagam menos (custos de transação recentes)
+3. **Burnout**: Empréstimos que "sobrevivem" períodos de taxas baixas têm menor probabilidade futura de prepagar (os mais sensíveis já saíram)
+4. **Sazonalidade**: Picos no verão (mudanças de casa)
+
+#### Legado:
+
+O modelo Richard & Roll estabeleceu o paradigma de **forma reduzida** (reduced-form): em vez de modelar a decisão ótima do mutuário, usa-se regressão sobre comportamento histórico. Este paradigma ainda domina a indústria (Fannie Mae, Freddie Mac, bancos de investimento).
+
+### Evolução para Logit Discreto
+
+Nos anos 1990, pesquisadores adaptaram o framework para **regressão logística discreta**:
+
+- Cada mês-empréstimo é uma observação binária (prepagou ou não)
+- Permite inclusão direta de covariáveis time-varying
+- Computacionalmente eficiente para grandes bases de dados
+
+Referências importantes:
+- **Schwartz & Torous (1989)**: "Prepayment and the Valuation of Mortgage-Backed Securities"
+- **Deng, Quigley & Van Order (2000)**: "Mortgage Terminations, Heterogeneity and the Exercise of Mortgage Options"
+
 ## Escolha Metodológica: Por que Logit e não Cox?
 
 ### Comparação: Cox vs Regressão Logística Discreta
