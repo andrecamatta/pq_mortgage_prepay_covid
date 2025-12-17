@@ -1,24 +1,24 @@
-# Mortgage Prepayment COVID Analysis
+# Análise de Pré-Pagamento Hipotecário durante COVID
 
-Julia pipeline for analyzing mortgage prepayment behavior during COVID-19 using Freddie Mac loan-level data.
+Pipeline em Julia para análise de comportamento de pré-pagamento de hipotecas durante a COVID-19 usando dados do Freddie Mac.
 
-## Requirements
+## Requisitos
 
 - Julia 1.9+
-- ~2GB RAM for panel construction
-- ~16GB disk for Freddie Mac data
+- ~2GB RAM para construção do painel
+- ~16GB disco para dados do Freddie Mac
 
-## Data Setup
+## Configuração dos Dados
 
-1. Register at [Freddie Mac](https://www.freddiemac.com/research/datasets/sf-loanlevel-dataset)
-2. Download the **Sample Dataset** (not full dataset) for years 2016-2023
-3. Extract and place files:
+1. Registre-se no [Freddie Mac](https://www.freddiemac.com/research/datasets/sf-loanlevel-dataset)
+2. Baixe o **Sample Dataset** (não o dataset completo) para os anos 2016-2023
+3. Extraia e coloque os arquivos:
    ```
    data/raw/freddiemac/orig/sample_orig_YYYY.txt
    data/raw/freddiemac/svcg/sample_svcg_YYYY.txt
    ```
 
-## Installation
+## Instalação
 
 ```bash
 git clone <repo-url>
@@ -26,37 +26,37 @@ cd pq_mortgage_prepay_covid
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 
-## Running the Pipeline
+## Executando o Pipeline
 
 ```bash
-# 1. Load and validate data
+# 1. Carregar e validar dados
 julia --project=. 01_download_or_load_data.jl
 
-# 2. Build loan-month panel
+# 2. Construir painel loan-month
 julia --project=. 02_build_panel.jl
 
-# 3. Fit models (M0 baseline, M1 with COVID terms)
+# 3. Ajustar modelos (M0 baseline, M1 com termos COVID)
 julia --project=. 03_fit_models.jl
 
-# 4. Generate plots
+# 4. Gerar gráficos
 julia --project=. 04_plots.jl
 
-# 5. Exploratory analysis (optional)
+# 5. Análise exploratória (opcional)
 julia --project=. 05_eda.jl
 ```
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
-├── 01_download_or_load_data.jl  # Data loading
-├── 02_build_panel.jl            # Panel construction
-├── 03_fit_models.jl             # Logistic regression models
-├── 04_plots.jl                  # Visualizations
-├── 05_eda.jl                    # Exploratory analysis
-├── config/columns.jl            # Column mappings
-└── data/                        # Data directory (gitignored)
+├── 01_download_or_load_data.jl  # Carregamento de dados
+├── 02_build_panel.jl            # Construção do painel
+├── 03_fit_models.jl             # Modelos de regressão logística
+├── 04_plots.jl                  # Visualizações
+├── 05_eda.jl                    # Análise exploratória
+├── config/columns.jl            # Mapeamento de colunas
+└── data/                        # Diretório de dados (gitignored)
 ```
 
-## License
+## Licença
 
 MIT
