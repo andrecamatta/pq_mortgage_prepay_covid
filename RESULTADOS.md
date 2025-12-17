@@ -77,6 +77,34 @@ O coeficiente negativo de `covid_incentive` (-0.23) indica que:
 3. **Aperto de crédito** → bancos mais conservadores
 4. **Atrasos operacionais** → escritórios e cartórios fechados
 
+## Escolha Metodológica: Por que Logit e não Cox?
+
+### Comparação: Cox vs Regressão Logística Discreta
+
+| Aspecto | Cox Proportional Hazards | Logit Discreto (usado) |
+|---------|--------------------------|------------------------|
+| **Tempo** | Contínuo | Discreto (mensal) |
+| **Baseline hazard** | Não-paramétrico | Absorvido no intercepto |
+| **Covariáveis time-varying** | Complexo de implementar | Simples (cada mês = 1 obs) |
+| **Escala** | Lento para milhões de obs | Rápido |
+| **Interpretação** | Hazard ratios | Odds ratios ≈ hazard ratios* |
+
+*Quando a probabilidade é baixa (~1% ao mês), odds ratio ≈ hazard ratio.
+
+### Justificativas para Logit Discreto:
+
+1. **Dados naturalmente discretos**: Observações são mensais, não contínuas
+2. **Covariáveis time-varying**: Taxa de mercado, incentivo e idade mudam a cada mês
+3. **Escala computacional**: 16.8 milhões de observações - Cox seria muito lento
+4. **Prática da indústria**: Fannie Mae e Freddie Mac usam modelos logit discretos
+
+### Limitação do Logit:
+
+O modelo assume que cada observação mês-empréstimo é **independente**, ignorando correlação intra-empréstimo. Modelos mais sofisticados incluiriam:
+- **Fragilidade** (random effects por empréstimo)
+- **GEE** (Generalized Estimating Equations)
+- **Modelo de duração paramétrico** (Weibull, log-logistic)
+
 ## Limitações Metodológicas
 
 ### Ausência de Contrafactual Adequado
