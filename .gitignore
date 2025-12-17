@@ -1,0 +1,27 @@
+# Data files
+data/
+*.arrow
+*.parquet
+
+# Freddie Mac data (must be downloaded separately)
+sample_orig_*.txt
+sample_svcg_*.txt
+*.zip
+
+# Julia
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+Manifest.toml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.log
