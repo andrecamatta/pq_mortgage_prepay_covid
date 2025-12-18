@@ -6,6 +6,7 @@
 using CSV, DataFrames, Arrow, Dates
 using GLM, StatsModels, StatsBase
 using Distributions: Chisq, cdf
+using Random: shuffle
 
 include("01_download_or_load_data.jl")
 
@@ -178,6 +179,32 @@ function main()
     m1_eval = evaluate_model(m1, train, val, test)
     @info "M1 Log Loss - Train: $(round(m1_eval.train_logloss, digits=4)), Val: $(round(m1_eval.val_logloss, digits=4)), Test: $(round(m1_eval.test_logloss, digits=4))"
     
+    # Save Predictions for Plotting (Monthly Aggregates)
+    # We use the full dataset (train_val + test) to get the complete time series
+    # But wait, M1 was fit on train_val only. We should predict on everything to see full series.
+    # Note: Using M1 fit on train_val to predict on test is correct for "out of sample" check,
+    # but for the "Observed vs Predicted" plot we often want to see the fit across the board.
+    # Let's combine everything for prediction generation.
+    
+    all_data = vcat(train, val, test)
+    
+    # Add predictions to a copy
+    pred_df = select(all_data, :monthly_rpt_period, :y)
+    pred_df.m0_pred = predict(m0, all_data)
+    pred_df.m1_pred = predict(m1, all_data)
+    
+    # Aggregate by month
+    monthly_agg = combine(groupby(pred_df, :monthly_rpt_period),
+        :y => mean => :observed,
+        :m0_pred => mean => :m0_pred,
+        :m1_pred => mean => :m1_pred
+    )
+    sort!(monthly_agg, :monthly_rpt_period)
+    
+    CSV.write(joinpath(RESULTS_DIR, "monthly_predictions.csv"), monthly_agg)
+    @info "Saved monthly aggregated predictions to monthly_predictions.csv"
+
+    
     # Save M1 coefficients
     m1_coef = DataFrame(
         term = coefnames(m1),
@@ -219,10 +246,9 @@ function main()
         std_error = stderror(m2),
     )
     m2_coef.ci_lower = m2_coef.estimate .- 1.96 .* m2_coef.std_error
-    m2_coef.ci_upper = m2_coef.estimate .+ 1.96 .* m2_coef.std_error
     CSV.write(joinpath(RESULTS_DIR, "m2_coefficients.csv"), m2_coef)
-    
-    # ===== Likelihood Ratio Test: M0 vs M1 =====
+
+    # ===== Likelihood Ratio Tests =====
     m0_full = fit_m0(train_val)
     
     ll_m0 = loglikelihood(m0_full)

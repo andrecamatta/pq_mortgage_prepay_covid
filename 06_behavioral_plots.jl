@@ -1,7 +1,7 @@
 # =============================================================================
 # 06_behavioral_plots.jl
 # =============================================================================
-# Visualizations for behavioral bias effects
+# Visualizations for behavioral bias effects (Continuous Interaction Curves)
 
 using CSV, DataFrames, Arrow, Dates, Statistics
 using StatsPlots, Plots
@@ -10,208 +10,203 @@ include("01_download_or_load_data.jl")
 include("config/project.jl")
 
 """
-Create loan_age buckets (6 buckets, up to 72 months).
+Load M2 coefficients and return a helper function to get them.
 """
-function add_age_bucket(df::DataFrame)
-    df = copy(df)
-    # Filter to loans <= 72 months old
-    df = filter(r -> r.loan_age <= 72, df)
-    df.age_bucket = map(df.loan_age) do age
-        if age <= 12 return "1-12"
-        elseif age <= 24 return "13-24"
-        elseif age <= 36 return "25-36"
-        elseif age <= 48 return "37-48"
-        elseif age <= 60 return "49-60"
-        else return "61-72"
+function load_m2_coefs()
+    df = CSV.read(joinpath(RESULTS_DIR, "m2_coefficients.csv"), DataFrame)
+    # Helper to safe get
+    get_beta(term) = begin
+        row = filter(r -> r.term == term, df)
+        if nrow(row) == 0
+            # Handle intercept if named differently
+            if term == "Intercept"
+                row = filter(r -> r.term == "(Intercept)", df)
+            end
         end
+        return row.estimate[1]
     end
-    return df
+    return get_beta
 end
 
 """
-Create credit_score buckets.
+Load M3 coefficients.
 """
-function add_credit_bucket(df::DataFrame)
-    df = copy(df)
-    df.credit_bucket = map(df.credit_score) do score
-        if ismissing(score) return missing
-        elseif score < 660 return "<660"
-        elseif score < 700 return "660-699"
-        elseif score < 740 return "700-739"
-        elseif score < 780 return "740-779"
-        else return "780+"
+function load_m3_coefs()
+    df = CSV.read(joinpath(RESULTS_DIR, "m3_coefficients.csv"), DataFrame)
+    get_beta(term) = begin
+        row = filter(r -> r.term == term, df)
+        if nrow(row) == 0
+            if term == "Intercept"
+                row = filter(r -> r.term == "(Intercept)", df)
+            end
         end
+        return isempty(row) ? 0.0 : row.estimate[1]
     end
-    return df
+    return get_beta
 end
 
 """
-Plot 1: Sunk-Cost - Prepay by loan age, COVID vs non-COVID
+Plot 1: Sunk Cost (Probability vs Loan Age)
+Interaction: covid * loan_age
 """
-function plot_sunk_cost(panel::DataFrame)
-    @info "Creating Sunk-Cost visualization..."
+function plot_sunk_cost_continuous()
+    @info "Creating Sunk-Cost visualization (Continuous)..."
     
-    df = add_age_bucket(panel)
-    df.period = ifelse.(df.covid .== 1, "COVID", "Outros")
+    get_beta = load_m2_coefs()
     
-    agg = combine(groupby(df, [:age_bucket, :period]), 
-        :y => mean => :prepay_rate)
+    # Base values
+    intercept = get_beta("(Intercept)")
+    b_incentive = get_beta("incentive")
+    b_age = get_beta("loan_age")
+    b_credit = get_beta("credit_score")
+    b_ltv = get_beta("ltv")
+    b_covid = get_beta("covid")
+    b_covid_incentive = get_beta("covid_incentive")
+    b_covid_age = get_beta("covid_loan_age")
+    b_covid_credit = get_beta("covid_credit_score")
     
-    age_order = ["1-12", "13-24", "25-36", "37-48", "49-60", "61-72"]
+    # Fixed Covariates
+    fixed_incentive = 0.5 # 50bps incentive
+    fixed_credit = 720
+    fixed_ltv = 80
     
-    outros = Float64[]
-    covid = Float64[]
-    for age in age_order
-        o = filter(r -> r.age_bucket == age && r.period == "Outros", agg)
-        c = filter(r -> r.age_bucket == age && r.period == "COVID", agg)
-        push!(outros, nrow(o) > 0 ? o.prepay_rate[1] * 100 : 0.0)
-        push!(covid, nrow(c) > 0 ? c.prepay_rate[1] * 100 : 0.0)
+    # Range
+    ages = 0:1:120 # 0 to 10 years
+    
+    y_normal = Float64[]
+    y_covid = Float64[]
+    
+    for age in ages
+        # Core Logit (without COVID terms)
+        core = intercept + b_incentive*fixed_incentive + b_age*age + b_credit*fixed_credit + b_ltv*fixed_ltv
+        
+        # Normal
+        logit_0 = core
+        prob_0 = 1 / (1 + exp(-logit_0))
+        push!(y_normal, prob_0 * 100)
+        
+        # COVID
+        # Add main covid term + interactions
+        # covid=1, covid*incentive, covid*age, covid*credit
+        logit_1 = core + b_covid*1 + b_covid_incentive*(1*fixed_incentive) + b_covid_age*(1*age) + b_covid_credit*(1*fixed_credit)
+        prob_1 = 1 / (1 + exp(-logit_1))
+        push!(y_covid, prob_1 * 100)
     end
     
-    p = groupedbar(age_order, [outros covid],
-        label=["Outros períodos" "COVID"],
-        color=[:steelblue :crimson],
-        size=(800, 500),
-        legend=:topright,
-        xlabel="Idade do Empréstimo (meses)",
-        ylabel="Taxa de Pré-pagamento (%)",
-        title="Sunk-Cost: Empréstimos velhos responderam MENOS ao COVID\n(covid×loan_age = -0.0195)",
-        titlefontsize=10,
-        bar_width=0.7)
+    p = plot(size=(800, 500))
     
-    savefig(p, joinpath(PLOTS_DIR, "behavioral_01_sunk_cost.png"))
-    @info "Saved"
+    plot!(p, ages, y_normal, label="Período Normal", color=:blue, linewidth=2.5)
+    plot!(p, ages, y_covid, label="Período COVID", color=:red, linewidth=2.5)
+    
+    xlabel!("Idade do Empréstimo (Meses)")
+    ylabel!("Probabilidade Prevista (%)")
+    
+    # Check slope difference manually to set title
+    title_str = "Efeito Sunk-Cost: Empréstimos velhos respondem MENOS\n(Gap diminui ou inverte com a Idade)"
+    title!(title_str, titlefontsize=10)
+    
+    savefig(p, joinpath(PLOTS_DIR, "behavioral_01_sunk_cost_continuous.png"))
+    @info "Saved Sunk Cost Plot"
     return p
 end
 
 """
-Plot 2: Overconfidence - Prepay by credit score, COVID vs non-COVID
+Plot 2: Overconfidence (Probability vs Credit Score)
+Interaction: covid * credit_score
 """
-function plot_overconfidence(panel::DataFrame)
-    @info "Creating Overconfidence visualization..."
+function plot_overconfidence_continuous()
+    @info "Creating Overconfidence visualization (Continuous)..."
     
-    df = add_credit_bucket(panel)
-    df = dropmissing(df, :credit_bucket)
-    df.period = ifelse.(df.covid .== 1, "COVID", "Outros")
+    get_beta = load_m2_coefs()
     
-    agg = combine(groupby(df, [:credit_bucket, :period]), 
-        :y => mean => :prepay_rate)
+    # Base values
+    intercept = get_beta("(Intercept)")
+    b_incentive = get_beta("incentive")
+    b_age = get_beta("loan_age")
+    b_credit = get_beta("credit_score")
+    b_ltv = get_beta("ltv")
+    b_covid = get_beta("covid")
+    b_covid_incentive = get_beta("covid_incentive")
+    b_covid_age = get_beta("covid_loan_age")
+    b_covid_credit = get_beta("covid_credit_score")
     
-    credit_order = ["<660", "660-699", "700-739", "740-779", "780+"]
+    # Fixed Covariates
+    fixed_incentive = 0.5 
+    fixed_age = 30
+    fixed_ltv = 80
     
-    outros = Float64[]
-    covid = Float64[]
-    for cs in credit_order
-        o = filter(r -> r.credit_bucket == cs && r.period == "Outros", agg)
-        c = filter(r -> r.credit_bucket == cs && r.period == "COVID", agg)
-        push!(outros, nrow(o) > 0 ? o.prepay_rate[1] * 100 : 0.0)
-        push!(covid, nrow(c) > 0 ? c.prepay_rate[1] * 100 : 0.0)
+    # Range
+    scores = 620:5:800
+    
+    y_normal = Float64[]
+    y_covid = Float64[]
+    
+    for s in scores
+        # Core
+        core = intercept + b_incentive*fixed_incentive + b_age*fixed_age + b_credit*s + b_ltv*fixed_ltv
+        
+        # Normal
+        logit_0 = core
+        prob_0 = 1 / (1 + exp(-logit_0))
+        push!(y_normal, prob_0 * 100)
+        
+        # COVID
+        logit_1 = core + b_covid*1 + b_covid_incentive*(1*fixed_incentive) + b_covid_age*(1*fixed_age) + b_covid_credit*(1*s)
+        prob_1 = 1 / (1 + exp(-logit_1))
+        push!(y_covid, prob_1 * 100)
     end
     
-    p = groupedbar(credit_order, [outros covid],
-        label=["Outros períodos" "COVID"],
-        color=[:steelblue :seagreen],
-        size=(800, 500),
-        legend=:topleft,
-        xlabel="Credit Score",
-        ylabel="Taxa de Pré-pagamento (%)",
-        title="Overconfidence: Scores altos responderam MAIS ao COVID\n(covid×credit_score = +2.1e-5)",
-        titlefontsize=10,
-        bar_width=0.7)
+    p = plot(size=(800, 500))
     
-    savefig(p, joinpath(PLOTS_DIR, "behavioral_02_overconfidence.png"))
-    @info "Saved"
+    plot!(p, scores, y_normal, label="Período Normal", color=:blue, linewidth=2.5)
+    plot!(p, scores, y_covid, label="Período COVID", color=:seagreen, linewidth=2.5)
+    
+    xlabel!("Score de Crédito (FICO)")
+    ylabel!("Probabilidade Prevista (%)")
+    
+    title!("Efeito Overconfidence: Scores altos respondem MAIS no COVID\n(Gap aumenta com o Score)", titlefontsize=10)
+    
+    savefig(p, joinpath(PLOTS_DIR, "behavioral_02_overconfidence_continuous.png"))
+    @info "Saved Overconfidence Plot"
     return p
 end
 
 """
-Plot 3: Diff-in-Diff style - lines showing interaction
+Plot 4: Liquidity Friction (Empirical Probability vs LTV)
+Bin LTV and compute actual prepayment rates.
 """
-function plot_diff_in_diff(panel::DataFrame)
-    @info "Creating Diff-in-Diff visualization..."
+function plot_ltv_effect_empirical(panel::DataFrame)
+    @info "Creating LTV Effect (Empirical) visualization..."
     
-    df = copy(panel)
-    df.high_age = df.loan_age .>= 48
-    df.high_credit = df.credit_score .>= 740
+    # Filter valid LTV (exclude unrealistic values)
+    df = filter(row -> !ismissing(row.ltv) && row.ltv > 0 && row.ltv <= 105, panel)
     
-    p = plot(layout=(1,2), size=(1000, 450), margin=5Plots.mm)
+    # Bins of 5%
+    df.ltv_bucket = floor.(df.ltv ./ 5) .* 5
     
-    # Left: Loan Age
-    age_agg = combine(groupby(df, [:covid, :high_age]), :y => mean => :rate)
-    sort!(age_agg, [:high_age, :covid])
+    gd = groupby(df, [:ltv_bucket, :covid])
+    agg = combine(gd, :y => mean => :prob, nrow => :n)
     
-    new_loan = filter(r -> !r.high_age, age_agg)
-    old_loan = filter(r -> r.high_age, age_agg)
+    # FILTER: Only buckets with N > 5000 to avoid noise
+    agg = filter(r -> r.n >= 5000, agg)
     
-    plot!(p[1], ["Outros", "COVID"], new_loan.rate .* 100,
-          label="Novo (<48m)", marker=:circle, ms=8, lw=3, color=:blue)
-    plot!(p[1], ["Outros", "COVID"], old_loan.rate .* 100,
-          label="Velho (≥48m)", marker=:square, ms=8, lw=3, color=:red)
-    ylabel!(p[1], "Prepay Rate (%)")
-    title!(p[1], "Sunk-Cost\n(Velhos respondem menos)", titlefontsize=10)
+    sort!(agg, :ltv_bucket)
     
-    # Right: Credit Score
-    credit_agg = combine(groupby(df, [:covid, :high_credit]), :y => mean => :rate)
-    sort!(credit_agg, [:high_credit, :covid])
+    normal = filter(r -> r.covid == 0, agg)
+    covid = filter(r -> r.covid == 1, agg)
     
-    low_cs = filter(r -> !r.high_credit, credit_agg)
-    high_cs = filter(r -> r.high_credit, credit_agg)
+    p = plot(size=(800, 500))
     
-    plot!(p[2], ["Outros", "COVID"], low_cs.rate .* 100,
-          label="Score <740", marker=:circle, ms=8, lw=3, color=:orange)
-    plot!(p[2], ["Outros", "COVID"], high_cs.rate .* 100,
-          label="Score ≥740", marker=:square, ms=8, lw=3, color=:green)
-    ylabel!(p[2], "Prepay Rate (%)")
-    title!(p[2], "Overconfidence\n(Scores altos respondem mais)", titlefontsize=10)
+    plot!(p, normal.ltv_bucket, normal.prob .* 100, label="Período Normal", color=:blue, linewidth=2.5, marker=:circle, markersize=4)
+    plot!(p, covid.ltv_bucket, covid.prob .* 100, label="Período COVID", color=:orange, linewidth=2.5, marker=:circle, markersize=4)
     
-    savefig(p, joinpath(PLOTS_DIR, "behavioral_03_diff_in_diff.png"))
-    @info "Saved"
-    return p
-end
-
-"""
-Plot 4: COVID multiplier by segment
-"""
-function plot_multiplier(panel::DataFrame)
-    @info "Creating COVID multiplier visualization..."
+    xlabel!("LTV (Loan-to-Value) %")
+    ylabel!("Probabilidade Observada (%)")
     
-    df = copy(panel)
-    df.high_age = ifelse.(df.loan_age .>= 48, "Velho (≥48m)", "Novo (<48m)")
-    df.high_credit = ifelse.(df.credit_score .>= 740, "Score ≥740", "Score <740")
+    title!("Efeito LTV no Pré-pagamento\n(Buckets com N > 5000 observações)", titlefontsize=10)
     
-    agg = combine(groupby(df, [:high_age, :high_credit, :covid]), 
-        :y => mean => :rate)
-    
-    # Calculate multipliers
-    segments = ["Novo, <740", "Novo, ≥740", "Velho, <740", "Velho, ≥740"]
-    multipliers = Float64[]
-    
-    for (age, credit) in [("Novo (<48m)", "Score <740"), ("Novo (<48m)", "Score ≥740"),
-                          ("Velho (≥48m)", "Score <740"), ("Velho (≥48m)", "Score ≥740")]
-        outros = filter(r -> r.high_age == age && r.high_credit == credit && r.covid == 0, agg)
-        covid_r = filter(r -> r.high_age == age && r.high_credit == credit && r.covid == 1, agg)
-        if nrow(outros) > 0 && nrow(covid_r) > 0 && outros.rate[1] > 0
-            push!(multipliers, covid_r.rate[1] / outros.rate[1])
-        else
-            push!(multipliers, 0.0)
-        end
-    end
-    
-    p = bar(segments, multipliers,
-        color=[:steelblue, :seagreen, :coral, :crimson],
-        size=(800, 500),
-        legend=false,
-        xlabel="Segmento",
-        ylabel="Multiplicador COVID (COVID ÷ Outros)",
-        title="Multiplicador COVID por Segmento\n(Maior = respondeu mais ao COVID)",
-        titlefontsize=10,
-        bar_width=0.6,
-        rotation=15)
-    
-    hline!([1.0], color=:gray, linestyle=:dash, label="")
-    
-    savefig(p, joinpath(PLOTS_DIR, "behavioral_04_multiplier.png"))
-    @info "Saved"
+    savefig(p, joinpath(PLOTS_DIR, "behavioral_04_ltv_effect.png"))
+    @info "Saved LTV Effect Plot"
     return p
 end
 
@@ -219,13 +214,22 @@ function main()
     @info "=== 06_behavioral_plots.jl ==="
     mkpath(PLOTS_DIR)
     
-    panel = Arrow.Table(PANEL_PATH) |> DataFrame
-    @info "Loaded: $(nrow(panel)) observations"
+    # Load Panel for Empirical Plots
+    @info "Loading Panel Data for empirical plots..."
+    panel = DataFrame(Arrow.Table(PANEL_PATH))
+    @info "Panel loaded."
+
+    # Check if M2 results exist for Model Plots
+    if !isfile(joinpath(RESULTS_DIR, "m2_coefficients.csv"))
+        @error "M2 coefficients not found. Please run 03_fit_models.jl first."
+        return
+    end
+
+    plot_sunk_cost_continuous()
+    plot_overconfidence_continuous()
     
-    plot_sunk_cost(panel)
-    plot_overconfidence(panel)
-    plot_diff_in_diff(panel)
-    plot_multiplier(panel)
+    # Empirical LTV plot only (Size plot removed: current_upb = 0 at prepayment)
+    plot_ltv_effect_empirical(panel)
     
     @info "All behavioral plots saved to $PLOTS_DIR"
 end

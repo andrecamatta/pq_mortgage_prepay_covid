@@ -4,7 +4,7 @@ Este projeto analisa como a pandemia de COVID-19 afetou o comportamento de pré-
 
 ## Principais Descobertas
 
-- **Boom Desigual**: Taxa de prepay aumentou 4.3x durante COVID, mas o efeito foi 100% concentrado em residências primárias (+0.35% excesso), compensando retração de investidores (-2.20% excesso)
+- **Boom Desigual**: Taxa de prepay aumentou 3.3x durante COVID, mas o efeito foi 100% concentrado em residências primárias (+0.35% excesso), compensando retração de investidores (-2.20% excesso)
 - **Freio Comportamental**: Inércia (Sunk Cost) em empréstimos antigos reduziu o boom potencial em 44%
 - **Drivers Identificados**: WFH/Migração (validado por geografia), Eviction Moratorium (validado por ocupação), Digitalização (literatura)
 
@@ -78,6 +78,8 @@ julia --project=. 01_download_or_load_data.jl
 julia --project=. 02_build_panel.jl
 julia --project=. 03_fit_models.jl
 julia --project=. 04_plots.jl
+julia --project=. 05_eda.jl
+julia --project=. 06_behavioral_plots.jl
 julia --project=. 07_quantify_biases.jl
 julia --project=. 08_validate_drivers.jl
 julia --project=. 09_exploratory_plots.jl

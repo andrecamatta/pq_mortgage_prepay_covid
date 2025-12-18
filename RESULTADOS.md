@@ -6,7 +6,7 @@ Este estudo analisa o comportamento de pré-pagamento de hipotecas durante a pan
 
 **Principais Descobertas (Foco no Agregado):**
 
-1.  **Aumento Estrutural**: Taxa de prepay aumentou **3.1x** durante COVID (0.89% → 2.76% mensal)
+1.  **Aumento Estrutural**: Taxa de prepay aumentou **3.3x** durante COVID (0.83% → 2.76% mensal)
     - Desse aumento, juros baixos explicam a maior parte (M0 prevê 2.63%)
     - Excesso além de juros: apenas **+0.13 p.p. (5% adicional)**
 2.  **Drivers do Excesso** (além de juros):
@@ -123,7 +123,7 @@ logit(p_{i,t}) = M1 + λ·(covid × loan_age) + μ·(covid × credit_score)
 ## Interpretações dos Efeitos
 
 ### 1. O "Paradoxo COVID": Aumento Além do Incentivo
-**Observação**: Taxa de prepay durante COVID (2.76%) foi 3.1x maior que pré-COVID (0.89%), mas o incentivo de juros sozinho prediz apenas 1.8x.
+**Observação**: Taxa de prepay durante COVID (2.76%) foi 3.3x maior que pré-COVID (0.83%). O modelo base (M0), capturando incentivos e controles, prediz 3.17x (2.63%), deixando um excesso inexplicado de 5%.
 
 **Mecanismo (Coeficiente `covid = +1.12`)**:
 - O termo exógeno domina o efeito de interação negativo.
@@ -173,21 +173,21 @@ O coeficiente `covid = +1.12` no modelo M2 é um **termo exógeno agregado** que
 **Dois Tipos de Comparação - Temporal vs Contrafactual:**
 
 1. **Comparação Temporal** (Antes vs Durante):
-   - Pré-COVID (2016-2019): Taxa média = 0.89%/mês
+   - Pré-COVID (2016-2019): Taxa média = 0.83%/mês
    - Durante COVID (Mar/2020-Dez/2021): Taxa média = 2.76%/mês
-   - **Multiplicador: 2.76 / 0.89 = 3.1x**
+   - **Multiplicador: 2.76 / 0.83 = 3.3x**
    
 2. **Comparação Contrafactual** (Observado vs Esperado por Juros):
    - Observado durante COVID: 2.76%/mês
    - Esperado pelo M0 (dado juros baixos): 2.63%/mês
-   - M0 sozinho causaria: 2.63 / 0.89 = **2.96x** vs pré-COVID
-   - **Excesso além de juros: 3.1x / 2.96x = 1.05x (5% adicional)**
+   - M0 sozinho causaria: 2.63 / 0.83 = **3.17x** vs pré-COVID
+   - **Excesso além de juros: 3.3x / 3.17x = 1.05x (5% adicional)**
    - Em termos absolutos: **0.13 p.p.**
 
 **Interpretação:**
 - M0 já incorpora o efeito dos juros baixos ao prever 2.63%
 - Logo, o excesso de 0.13 p.p. representa fatores **além de juros**
-- Juros baixos explicam 95% do boom (2.96x), excesso explica 5% (0.14x)
+- Juros baixos explicam 95% do boom (3.17x), excesso explica 5% (0.14x)
 
 **Decomposição usada (Plot G):**
 - Analisamos a comparação contrafactual (0.13 p.p.)
@@ -533,7 +533,7 @@ O coeficiente `covid = +1.12` no modelo M2 é um **termo exógeno agregado** que
 
 ## Conclusão Final
 
-A pandemia de COVID-19 criou um boom histórico de pré-pagamento (+3.1x), mas a análise agregada revela que os **drivers uniformes** dominaram:
+A pandemia de COVID-19 criou um boom histórico de pré-pagamento (+3.3x), mas a análise agregada revela que os **drivers uniformes** dominaram:
 
 **Aceleradores Agregados** (122.7% do excesso):
 - **Digitalização/Fintech**: Appraisal waivers, e-closing, processamento 20% mais rápido → Reduziu fricção para todos
