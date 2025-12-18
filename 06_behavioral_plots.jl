@@ -7,9 +7,7 @@ using CSV, DataFrames, Arrow, Dates, Statistics
 using StatsPlots, Plots
 
 include("01_download_or_load_data.jl")
-
-const PLOTS_DIR = joinpath(DATA_DIR, "plots")
-const PANEL_PATH = joinpath(PROCESSED_DIR, "loan_month_panel.arrow")
+include("config/project.jl")
 
 """
 Create loan_age buckets (6 buckets, up to 72 months).

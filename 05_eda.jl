@@ -2,23 +2,13 @@
 # 05_eda.jl
 # =============================================================================
 # Exploratory Data Analysis for Mortgage Prepayment Study
-#
-# HYPOTHESIS: Prepayment reduced during COVID due to liquidity constraints
-# (people without income couldn't refinance despite low rates)
 # =============================================================================
 
 using CSV, DataFrames, Dates, Arrow, Statistics
 using StatsPlots, Plots
 
 include("01_download_or_load_data.jl")
-
-# =============================================================================
-# Configuration
-# =============================================================================
-
-const PLOTS_DIR = joinpath(DATA_DIR, "plots")
-const COVID_START = Date(2020, 3, 1)
-const COVID_END = Date(2021, 12, 1)
+include("config/project.jl")
 
 # Helper to convert YYYYMM to Date
 period_to_date(p::Int) = Date(div(p, 100), mod(p, 100), 1)

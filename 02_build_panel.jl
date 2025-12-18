@@ -7,16 +7,7 @@
 using CSV, DataFrames, Dates, Arrow, Statistics
 
 include("01_download_or_load_data.jl")
-
-# =============================================================================
-# Configuration
-# =============================================================================
-
-const PANEL_PATH = joinpath(PROCESSED_DIR, "loan_month_panel.arrow")
-
-# COVID period definition (for M1 model)
-const COVID_START = 202003
-const COVID_END = 202112
+include("config/project.jl")
 
 # =============================================================================
 # Panel Construction Functions (OPTIMIZED)
@@ -89,9 +80,9 @@ function build_loan_month_panel(orig::DataFrame, perf::DataFrame, fred::DataFram
     # incentive = orig_rate - market_rate - VECTORIZED
     panel.incentive = panel.orig_rate .- panel.market_rate
     
-    # COVID dummy - VECTORIZED
-    panel.covid = ifelse.((panel.monthly_rpt_period .>= COVID_START) .& 
-                          (panel.monthly_rpt_period .<= COVID_END), 1, 0)
+    # COVID dummy - VECTORIZED (uses config/project.jl constants)
+    panel.covid = ifelse.((panel.monthly_rpt_period .>= COVID_START_INT) .& 
+                          (panel.monthly_rpt_period .<= COVID_END_INT), 1, 0)
     
     # covid * incentive interaction - VECTORIZED
     panel.covid_incentive = panel.covid .* coalesce.(panel.incentive, 0.0)

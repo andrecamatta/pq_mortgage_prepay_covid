@@ -10,17 +10,7 @@ using CSV, DataFrames, Dates
 using StatsPlots, Plots
 
 include("01_download_or_load_data.jl")
-
-# =============================================================================
-# Configuration
-# =============================================================================
-
-const PLOTS_DIR = joinpath(DATA_DIR, "plots")
-const RESULTS_DIR = joinpath(DATA_DIR, "results")
-
-# COVID period for visual annotation
-const COVID_START_DATE = Date(2020, 3, 1)
-const COVID_END_DATE = Date(2021, 12, 1)
+include("config/project.jl")
 
 # =============================================================================
 # Helper Functions
@@ -35,8 +25,8 @@ end
 
 """Add a shaded vertical band for the COVID period."""
 function add_covid_band!(p)
-    vspan!(p, [COVID_START_DATE, COVID_END_DATE], 
-           fillalpha=0.15, fillcolor=:red, label="COVID Period")
+    vspan!(p, [COVID_START, COVID_END], 
+           fillalpha=COVID_BAND_ALPHA, fillcolor=COVID_BAND_COLOR, label="COVID Period")
 end
 
 # =============================================================================
