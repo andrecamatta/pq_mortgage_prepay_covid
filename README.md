@@ -35,7 +35,7 @@ julia --project=. 01_download_or_load_data.jl
 # 2. Construir painel loan-month
 julia --project=. 02_build_panel.jl
 
-# 3. Ajustar modelos (M0 baseline, M1 com termos COVID)
+# 3. Ajustar modelos (M0, M1, M2)
 julia --project=. 03_fit_models.jl
 
 # 4. Gerar gráficos
@@ -44,6 +44,19 @@ julia --project=. 04_plots.jl
 # 5. Análise exploratória (opcional)
 julia --project=. 05_eda.jl
 ```
+
+## Modelos
+
+| Modelo | Descrição |
+|--------|-----------|
+| **M0** | Baseline: incentivo + idade + credit_score + ltv |
+| **M1** | + COVID dummy + covid×incentivo |
+| **M2** | + covid×loan_age + covid×credit_score (vieses comportamentais) |
+
+### Testes de Vieses Comportamentais (M2)
+
+- **covid×loan_age**: Proxy para sunk-cost fallacy
+- **covid×credit_score**: Proxy para excesso de confiança
 
 ## Estrutura do Projeto
 
@@ -54,6 +67,7 @@ julia --project=. 05_eda.jl
 ├── 04_plots.jl                  # Visualizações
 ├── 05_eda.jl                    # Análise exploratória
 ├── config/columns.jl            # Mapeamento de colunas
+├── RESULTADOS.md                # Análise detalhada dos resultados
 └── data/                        # Diretório de dados (gitignored)
 ```
 
