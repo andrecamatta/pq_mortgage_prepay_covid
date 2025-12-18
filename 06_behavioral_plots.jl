@@ -75,6 +75,7 @@ function plot_sunk_cost(panel::DataFrame)
         xlabel="Idade do Empréstimo (meses)",
         ylabel="Taxa de Pré-pagamento (%)",
         title="Sunk-Cost: Empréstimos velhos responderam MENOS ao COVID\n(covid×loan_age = -0.0195)",
+        titlefontsize=10,
         bar_width=0.7)
     
     savefig(p, joinpath(PLOTS_DIR, "behavioral_01_sunk_cost.png"))
@@ -114,6 +115,7 @@ function plot_overconfidence(panel::DataFrame)
         xlabel="Credit Score",
         ylabel="Taxa de Pré-pagamento (%)",
         title="Overconfidence: Scores altos responderam MAIS ao COVID\n(covid×credit_score = +2.1e-5)",
+        titlefontsize=10,
         bar_width=0.7)
     
     savefig(p, joinpath(PLOTS_DIR, "behavioral_02_overconfidence.png"))
@@ -201,6 +203,7 @@ function plot_multiplier(panel::DataFrame)
         xlabel="Segmento",
         ylabel="Multiplicador COVID (COVID ÷ Outros)",
         title="Multiplicador COVID por Segmento\n(Maior = respondeu mais ao COVID)",
+        titlefontsize=10,
         bar_width=0.6,
         rotation=15)
     

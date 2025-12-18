@@ -61,7 +61,7 @@ function plot_prepay_vs_rate(agg::DataFrame)
           label="Monthly Prepay Rate (%)",
           color=:blue, linewidth=2,
           ylabel="Prepay Rate (%)",
-          title="Prepayment Rate Over Time",
+          title="Prepayment Rate Over Time", titlefontsize=10,
           legend=:topleft)
     
     # Add COVID shading
@@ -72,7 +72,7 @@ function plot_prepay_vs_rate(agg::DataFrame)
           label="30Y Mortgage Rate (%)",
           color=:orange, linewidth=2,
           xlabel="Date", ylabel="Rate (%)",
-          title="30-Year Mortgage Rate (FRED)",
+          title="30-Year Mortgage Rate (FRED)", titlefontsize=10,
           legend=:topleft)
     vspan!(p[2], [COVID_START, COVID_END], fillalpha=0.2, fillcolor=:red, label="")
     
@@ -105,7 +105,7 @@ function plot_prepay_by_period(agg::DataFrame)
     p = groupedbar(period_stats.period_type, 
                    [period_stats.mean_prepay .* 100 period_stats.mean_rate],
                    label=["Avg Prepay Rate (%)" "Avg Market Rate (%)"],
-                   title="Prepayment and Market Rates by Period",
+                   title="Prepayment and Market Rates by Period", titlefontsize=10,
                    ylabel="Rate (%)",
                    legend=:topright,
                    size=(800, 500),
@@ -136,7 +136,7 @@ function plot_incentive_analysis(agg::DataFrame)
                 group=agg.period_type,
                 xlabel="Average Incentive (Orig Rate - Market Rate, %)",
                 ylabel="Monthly Prepay Rate (%)",
-                title="Prepayment Sensitivity to Refinancing Incentive",
+                title="Prepayment Sensitivity to Refinancing Incentive", titlefontsize=10,
                 legend=:topleft,
                 markersize=6,
                 alpha=0.7,
@@ -177,7 +177,7 @@ function plot_monthly_prepay_counts(agg::DataFrame)
              label="Prepayment Count",
              color=:darkgreen, linewidth=2,
              xlabel="Date", ylabel="Number of Prepayments",
-             title="Monthly Prepayment Volume",
+             title="Monthly Prepayment Volume", titlefontsize=10,
              legend=:topright,
              size=(1000, 500))
     

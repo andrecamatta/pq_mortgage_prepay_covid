@@ -60,7 +60,7 @@ function plot_a_prepay_vs_market()
           color=:blue,
           linewidth=2,
           ylabel="Prepay Rate (%)",
-          title="Monthly Prepayment Rate",
+          title="Monthly Prepayment Rate", titlefontsize=10,
           legend=:topright)
     add_covid_band!(p[1])
     
@@ -71,7 +71,7 @@ function plot_a_prepay_vs_market()
           linewidth=2,
           xlabel="Date",
           ylabel="Rate (%)",
-          title="30-Year Mortgage Rate (MORTGAGE30US)",
+          title="30-Year Mortgage Rate (MORTGAGE30US)", titlefontsize=10,
           legend=:topright)
     add_covid_band!(p[2])
     
@@ -117,7 +117,7 @@ function plot_b_observed_vs_predicted()
     
     xlabel!("Date")
     ylabel!("Hazard Rate (%)")
-    title!("Observed vs Predicted Monthly Prepayment Hazard")
+    title!("Observed vs Predicted Monthly Prepayment Hazard", titlefontsize=10)
     
     savefig(p, joinpath(PLOTS_DIR, "B_observed_vs_predicted.png"))
     @info "Saved Plot B"
@@ -181,7 +181,7 @@ function plot_c_coefficients()
     
     xlabel!("Coefficient")
     ylabel!("Estimate (with 95% CI)")
-    title!("Model Coefficients Comparison")
+    title!("Model Coefficients Comparison", titlefontsize=10)
     
     savefig(p, joinpath(PLOTS_DIR, "C_coefficients.png"))
     @info "Saved Plot C"
