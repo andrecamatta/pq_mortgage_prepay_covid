@@ -12,16 +12,19 @@ const PLOTS_DIR = joinpath(DATA_DIR, "plots")
 const PANEL_PATH = joinpath(PROCESSED_DIR, "loan_month_panel.arrow")
 
 """
-Create loan_age buckets.
+Create loan_age buckets (6 buckets, up to 72 months).
 """
 function add_age_bucket(df::DataFrame)
     df = copy(df)
+    # Filter to loans <= 72 months old
+    df = filter(r -> r.loan_age <= 72, df)
     df.age_bucket = map(df.loan_age) do age
-        if age <= 24 return "0-24"
-        elseif age <= 48 return "25-48"
-        elseif age <= 72 return "49-72"
-        elseif age <= 96 return "73-96"
-        else return "97+"
+        if age <= 12 return "1-12"
+        elseif age <= 24 return "13-24"
+        elseif age <= 36 return "25-36"
+        elseif age <= 48 return "37-48"
+        elseif age <= 60 return "49-60"
+        else return "61-72"
         end
     end
     return df
@@ -56,7 +59,7 @@ function plot_sunk_cost(panel::DataFrame)
     agg = combine(groupby(df, [:age_bucket, :period]), 
         :y => mean => :prepay_rate)
     
-    age_order = ["0-24", "25-48", "49-72", "73-96", "97+"]
+    age_order = ["1-12", "13-24", "25-36", "37-48", "49-60", "61-72"]
     
     outros = Float64[]
     covid = Float64[]
@@ -147,7 +150,7 @@ function plot_diff_in_diff(panel::DataFrame)
     plot!(p[1], ["Outros", "COVID"], old_loan.rate .* 100,
           label="Velho (≥48m)", marker=:square, ms=8, lw=3, color=:red)
     ylabel!(p[1], "Prepay Rate (%)")
-    title!(p[1], "Sunk-Cost\n(Velhos respondem menos)")
+    title!(p[1], "Sunk-Cost\n(Velhos respondem menos)", titlefontsize=10)
     
     # Right: Credit Score
     credit_agg = combine(groupby(df, [:covid, :high_credit]), :y => mean => :rate)
@@ -161,7 +164,7 @@ function plot_diff_in_diff(panel::DataFrame)
     plot!(p[2], ["Outros", "COVID"], high_cs.rate .* 100,
           label="Score ≥740", marker=:square, ms=8, lw=3, color=:green)
     ylabel!(p[2], "Prepay Rate (%)")
-    title!(p[2], "Overconfidence\n(Scores altos respondem mais)")
+    title!(p[2], "Overconfidence\n(Scores altos respondem mais)", titlefontsize=10)
     
     savefig(p, joinpath(PLOTS_DIR, "behavioral_03_diff_in_diff.png"))
     @info "Saved"
