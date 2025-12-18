@@ -50,7 +50,7 @@ function build_loan_month_panel(orig::DataFrame, perf::DataFrame, fred::DataFram
     t2 = time()
     # This is MUCH faster than filtering with Set membership
     panel = innerjoin(perf_subset, 
-                      select(orig_subset, [:loan_id, :orig_rate, :credit_score, :ltv]),
+                      select(orig_subset, [:loan_id, :orig_rate, :credit_score, :ltv, :state, :occupancy]),
                       on=:loan_id)
     @info "    After join: $(nrow(panel)) rows"
     @info "    Step 3 done in $(round(time() - t2, digits=1))s"
