@@ -2,7 +2,7 @@
 
 ## Resumo Executivo
 
-Este estudo analisa o comportamento de pré-pagamento de hipotecas durante a pandemia de COVID-19 usando dados do Freddie Mac (2016-2023). Os resultados indicam que, embora o pré-pagamento tenha aumentado significativamente durante o COVID, **o aumento foi menor do que seria esperado considerando apenas o efeito mecânico da queda nas taxas de juros**.
+Este estudo analisa o comportamento de pré-pagamento de hipotecas durante a pandemia de COVID-19 usando dados do Freddie Mac (2016-2023). Os resultados indicam que o pré-pagamento **aumentou significativamente durante o COVID** (4.3x), e que **o aumento foi MAIOR do que seria esperado considerando apenas o incentivo de refinanciamento** (3.1x observado vs 1.8x esperado). O período COVID teve um efeito positivo adicional além da queda nas taxas de juros.
 
 ## Dados
 
@@ -61,21 +61,36 @@ logit(p) = α + β·incentivo + γ·idade + δ·credit_score + ε·ltv + η·cov
 
 ## Interpretação Principal
 
-O coeficiente negativo de `covid_incentive` (-0.23) indica que:
+### Simulação do Efeito COVID
 
-> **O pré-pagamento durante o COVID foi menor do que seria esperado se considerássemos apenas o efeito mecânico da queda nas taxas de juros.**
+Para entender o efeito líquido, simulamos a probabilidade de prepayment:
 
-### Decomposição do efeito do incentivo:
+| Cenário | Incentivo | COVID | Prob. Prepay |
+|---------|-----------|-------|--------------|
+| Pré-COVID típico | 0.05% | 0 | 0.43% |
+| Hipotético (só incentivo) | 0.89% | 0 | 0.77% |
+| **COVID real** | 0.89% | 1 | **1.33%** |
 
-- **Fora do COVID**: β = 0.68
-- **Durante COVID**: β = 0.68 - 0.23 = **0.45** (33% menor)
+### Conclusão da Simulação:
 
-### Possíveis explicações para a fricção:
+- **Esperado só pelo incentivo**: 1.8x aumento
+- **Observado com COVID**: 3.1x aumento
 
-1. **Incerteza no emprego** → famílias evitaram refinanciar
-2. **Restrições de liquidez** → dificuldade em pagar custos de fechamento
-3. **Aperto de crédito** → bancos mais conservadores
-4. **Atrasos operacionais** → escritórios e cartórios fechados
+> **O pré-pagamento durante o COVID foi MAIOR do que seria esperado considerando apenas o incentivo de refinanciamento.**
+
+O coeficiente `covid = +0.76` (positivo) **domina** o efeito de `covid_incentive = -0.23` (negativo), resultando em **aumento líquido**.
+
+### Decomposição dos efeitos:
+
+1. **covid = +0.76**: Shift positivo no nível base (facilidade de refinanciar, políticas de estímulo, digitalização)
+2. **covid_incentive = -0.23**: Redução na sensibilidade marginal ao incentivo (possível saturação ou heterogeneidade)
+
+### Possíveis explicações para o AUMENTO além do incentivo:
+
+1. **Políticas de estímulo** → facilitação de refinanciamento
+2. **Digitalização acelerada** → processos online mais rápidos
+3. **Renda disponível** → menos gastos com viagens/lazer → mais recursos para custos de fechamento
+4. **Medo de aumento futuro** → urgência em "travar" taxas baixas
 
 ## Contexto Histórico: Modelagem de Pré-Pagamento
 
