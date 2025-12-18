@@ -58,6 +58,37 @@ function fit_m1(train_val::DataFrame)
     return model
 end
 
+"""
+    fit_m2(train_val::DataFrame) -> GLM model
+
+M2: Behavioral Bias Model with heterogeneous COVID effects
+
+logit(p_{i,t}) = α + β * incentive + γ * loan_age + δ * credit_score + ε * ltv 
+                 + η * covid + θ * (covid * incentive)
+                 + λ * (covid * loan_age)      # Sunk-cost proxy
+                 + μ * (covid * credit_score)  # Overconfidence proxy
+
+Tests:
+- λ > 0: COVID effect increases with loan age → sunk-cost weakened during COVID
+- μ > 0: COVID effect increases with credit score → overconfidence amplified
+"""
+function fit_m2(train_val::DataFrame)
+    @info "Fitting M2 (Behavioral Bias Interactions)..."
+    
+    # Create interaction terms
+    data = copy(train_val)
+    data.covid_loan_age = data.covid .* data.loan_age
+    data.covid_credit_score = data.covid .* data.credit_score
+    
+    formula = @formula(y ~ incentive + loan_age + credit_score + ltv + 
+                           covid + covid_incentive + 
+                           covid_loan_age + covid_credit_score)
+    model = glm(formula, data, Binomial(), LogitLink())
+    
+    @info "M2 fitted. Deviance: $(deviance(model))"
+    return model
+end
+
 # =============================================================================
 # Evaluation Functions
 # =============================================================================
@@ -157,47 +188,108 @@ function main()
     m1_coef.ci_upper = m1_coef.estimate .+ 1.96 .* m1_coef.std_error
     CSV.write(joinpath(RESULTS_DIR, "m1_coefficients.csv"), m1_coef)
     
+    # ===== M2: Behavioral Bias Model =====
+    # Create interaction terms for M2
+    train_val_m2 = copy(train_val)
+    train_val_m2.covid_loan_age = train_val_m2.covid .* train_val_m2.loan_age
+    train_val_m2.covid_credit_score = train_val_m2.covid .* train_val_m2.credit_score
+    
+    m2 = fit_m2(train_val)
+    
+    # Evaluate M2 (need to add interaction terms to test sets)
+    test_m2 = copy(test)
+    test_m2.covid_loan_age = test_m2.covid .* test_m2.loan_age
+    test_m2.covid_credit_score = test_m2.covid .* test_m2.credit_score
+    
+    train_m2 = copy(train)
+    train_m2.covid_loan_age = train_m2.covid .* train_m2.loan_age
+    train_m2.covid_credit_score = train_m2.covid .* train_m2.credit_score
+    
+    val_m2 = copy(val)
+    val_m2.covid_loan_age = val_m2.covid .* val_m2.loan_age
+    val_m2.covid_credit_score = val_m2.covid .* val_m2.credit_score
+    
+    m2_eval = evaluate_model(m2, train_m2, val_m2, test_m2)
+    @info "M2 Log Loss - Train: $(round(m2_eval.train_logloss, digits=4)), Val: $(round(m2_eval.val_logloss, digits=4)), Test: $(round(m2_eval.test_logloss, digits=4))"
+    
+    # Save M2 coefficients
+    m2_coef = DataFrame(
+        term = coefnames(m2),
+        estimate = coef(m2),
+        std_error = stderror(m2),
+    )
+    m2_coef.ci_lower = m2_coef.estimate .- 1.96 .* m2_coef.std_error
+    m2_coef.ci_upper = m2_coef.estimate .+ 1.96 .* m2_coef.std_error
+    CSV.write(joinpath(RESULTS_DIR, "m2_coefficients.csv"), m2_coef)
+    
     # ===== Likelihood Ratio Test: M0 vs M1 =====
-    # H0: COVID terms do not improve the model (δ = η = 0)
-    # We need to fit M0 on the same data as M1 for valid comparison
-    m0_full = fit_m0(train_val)  # Refit M0 on train+val
+    m0_full = fit_m0(train_val)
     
     ll_m0 = loglikelihood(m0_full)
     ll_m1 = loglikelihood(m1)
-    lr_stat = 2 * (ll_m1 - ll_m0)  # LR = 2 * (LL_unrestricted - LL_restricted)
-    df = 2  # Number of additional parameters in M1 (covid, covid_incentive)
-    p_value = 1 - cdf(Chisq(df), lr_stat)
+    ll_m2 = loglikelihood(m2)
+    
+    lr_stat_m1 = 2 * (ll_m1 - ll_m0)
+    df_m1 = 2
+    p_value_m1 = 1 - cdf(Chisq(df_m1), lr_stat_m1)
     
     @info "===== Likelihood Ratio Test: M0 vs M1 ====="
-    @info "  Log-Likelihood M0: $(round(ll_m0, digits=2))"
+    @info "  LR Statistic: $(round(lr_stat_m1, digits=2)), df=$df_m1, p=$(p_value_m1 < 1e-10 ? "<1e-10" : round(p_value_m1, sigdigits=3))"
+    
+    # LRT: M1 vs M2
+    lr_stat_m2 = 2 * (ll_m2 - ll_m1)
+    df_m2 = 2  # covid_loan_age and covid_credit_score
+    p_value_m2 = 1 - cdf(Chisq(df_m2), lr_stat_m2)
+    
+    @info "===== Likelihood Ratio Test: M1 vs M2 (Behavioral Bias) ====="
     @info "  Log-Likelihood M1: $(round(ll_m1, digits=2))"
-    @info "  LR Statistic: $(round(lr_stat, digits=2))"
-    @info "  Degrees of Freedom: $df"
-    @info "  P-value: $(p_value < 1e-10 ? "<1e-10" : round(p_value, sigdigits=3))"
-    @info "  Conclusion: $(p_value < 0.05 ? "REJECT H0 - COVID terms are SIGNIFICANT" : "Fail to reject H0")"
+    @info "  Log-Likelihood M2: $(round(ll_m2, digits=2))"
+    @info "  LR Statistic: $(round(lr_stat_m2, digits=2))"
+    @info "  Degrees of Freedom: $df_m2"
+    @info "  P-value: $(p_value_m2 < 1e-10 ? "<1e-10" : round(p_value_m2, sigdigits=3))"
+    @info "  Conclusion: $(p_value_m2 < 0.05 ? "REJECT H0 - Behavioral interactions are SIGNIFICANT" : "Fail to reject H0")"
+    
+    # Interpret behavioral coefficients
+    covid_loan_age_coef = m2_coef[m2_coef.term .== "covid_loan_age", :estimate][1]
+    covid_credit_coef = m2_coef[m2_coef.term .== "covid_credit_score", :estimate][1]
+    
+    @info "===== Behavioral Bias Interpretation ====="
+    @info "  covid×loan_age = $(round(covid_loan_age_coef, digits=4))"
+    if covid_loan_age_coef > 0
+        @info "    → POSITIVE: COVID effect INCREASES with loan age → Sunk-cost fallacy WEAKENED"
+    else
+        @info "    → NEGATIVE: COVID effect DECREASES with loan age → Sunk-cost fallacy STRENGTHENED"
+    end
+    
+    @info "  covid×credit_score = $(round(covid_credit_coef, digits=6))"
+    if covid_credit_coef > 0
+        @info "    → POSITIVE: COVID effect INCREASES with credit score → Overconfidence AMPLIFIED"
+    else
+        @info "    → NEGATIVE: COVID effect DECREASES with credit score → Overconfidence NOT confirmed"
+    end
     
     # Save evaluation metrics
     metrics = DataFrame(
-        model = ["M0", "M1"],
-        train_logloss = [m0_eval.train_logloss, m1_eval.train_logloss],
-        val_logloss = [m0_eval.val_logloss, m1_eval.val_logloss],
-        test_logloss = [m0_eval.test_logloss, m1_eval.test_logloss],
+        model = ["M0", "M1", "M2"],
+        train_logloss = [m0_eval.train_logloss, m1_eval.train_logloss, m2_eval.train_logloss],
+        val_logloss = [m0_eval.val_logloss, m1_eval.val_logloss, m2_eval.val_logloss],
+        test_logloss = [m0_eval.test_logloss, m1_eval.test_logloss, m2_eval.test_logloss],
     )
     CSV.write(joinpath(RESULTS_DIR, "model_metrics.csv"), metrics)
     
     # Save LRT results
     lrt_results = DataFrame(
-        test = ["Likelihood Ratio Test"],
-        lr_statistic = [lr_stat],
-        df = [df],
-        p_value = [p_value],
-        significant = [p_value < 0.05],
+        test = ["M0 vs M1", "M1 vs M2"],
+        lr_statistic = [lr_stat_m1, lr_stat_m2],
+        df = [df_m1, df_m2],
+        p_value = [p_value_m1, p_value_m2],
+        significant = [p_value_m1 < 0.05, p_value_m2 < 0.05],
     )
     CSV.write(joinpath(RESULTS_DIR, "lrt_results.csv"), lrt_results)
     
     @info "Results saved to $RESULTS_DIR"
     
-    return (m0=m0, m1=m1, metrics=metrics)
+    return (m0=m0, m1=m1, m2=m2, metrics=metrics)
 end
 
 # Run if executed directly
