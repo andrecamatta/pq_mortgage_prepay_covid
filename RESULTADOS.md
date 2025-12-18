@@ -22,7 +22,7 @@ Antes da modelagem, analisamos os dados brutos para entender as tendências macr
 
 A principal força motriz do pré-pagamento é o incentivo financeiro (Taxa Contrato - Taxa Mercado).
 
-![Taxa vs Prepay](data/plots/A_prepay_vs_market_rate.png)
+![Taxa vs Prepay](assets/figures/A_prepay_vs_market_rate.png)
 
 **Observações:**
 - A linha laranja (Taxa de Mercado) cai drasticamente no início de 2020.
@@ -33,7 +33,7 @@ A principal força motriz do pré-pagamento é o incentivo financeiro (Taxa Cont
 
 O gráfico abaixo mostra como a relação entre **Incentivo** e **Probabilidade de Prepay** mudou.
 
-![Sensibilidade ao Incentivo](data/plots/D_incentive_interaction.png)
+![Sensibilidade ao Incentivo](assets/figures/D_incentive_interaction.png)
 
 **Diagnóstico:**
 - **Período Normal (Azul)**: Relação logística clássica.
@@ -73,7 +73,7 @@ Utilizamos uma **Regressão Logística de Painel (Pooled Logit)**, padrão da in
 
 O gráfico abaixo compara a taxa média observada (azul) com a prevista pelo modelo M2 (laranja).
 
-![Observed vs Predicted](data/plots/B_observed_vs_predicted.png)
+![Observed vs Predicted](assets/figures/B_observed_vs_predicted.png)
 
 **Análise:**
 - O modelo captura com precisão o "pico" da pandemia.
@@ -83,7 +83,7 @@ O gráfico abaixo compara a taxa média observada (azul) com a prevista pelo mod
 
 O impacto relativo de cada variável nas odds de pré-pagamento.
 
-![Coeficientes M2](data/plots/C_coefficients.png)
+![Coeficientes M2](assets/figures/C_coefficients.png)
 
 **Valores Chave:**
 1.  **`covid` (+1.12)**: Choque positivo massivo, independente de juros.
@@ -98,7 +98,7 @@ Apesar de M0 explicar 95% do boom via juros, existe um excesso de 5% e, mais imp
 
 ### Decomposição do Excesso Agregado
 
-![Decomposição](data/plots/G_covid_decomposition.png)
+![Decomposição](assets/figures/G_covid_decomposition.png)
 
 - **Total (Roxo)**: Excesso total observado além dos juros.
 - **Geografia (Vermelho)**: Negativo (-0.03 p.p.), pois nossa amostra tem mais empréstimos na FL/TX (que pagaram menos) do que CA/NY.
@@ -108,14 +108,14 @@ Apesar de M0 explicar 95% do boom via juros, existe um excesso de 5% e, mais imp
 
 A maior descoberta do estudo é a bifurcação entre famílias e investidores.
 
-![Divergência Ocupação](data/plots/F_occupancy_divergence.png)
+![Divergência Ocupação](assets/figures/F_occupancy_divergence.png)
 
 - **Verde (Primary)**: Explodiu. Famílias aproveitaram juros baixos + digitalização + WFH.
 - **Laranja (Investment)**: Colapsou. Investidores foram travados pelo **Eviction Moratorium** (impedidos de despejar = colapso de fluxo de caixa = impossível refinanciar).
 
 ### Divergência Geográfica (WFH/Migração)
 
-![Divergência Geográfica](data/plots/E_geographic_divergence.png)
+![Divergência Geográfica](assets/figures/E_geographic_divergence.png)
 
 - **Vermelho (Êxodo - CA, NY)**: Taxas consistentemente maiores (vendas para saída).
 - **Azul (Destino - FL, TX)**: Taxas menores (compradores chegando, poucas vendas).
@@ -128,7 +128,7 @@ A maior descoberta do estudo é a bifurcação entre famílias e investidores.
 
 Identificamos que a idade do empréstimo foi um freio poderoso.
 
-![Sunk Cost](data/plots/behavioral_01_sunk_cost_continuous.png)
+![Sunk Cost](assets/figures/behavioral_01_sunk_cost_continuous.png)
 
 - **Linha Azul (Normal)**: Probabilidade sobe com a idade (efeito seasoning padrão).
 - **Linha Vermelha (COVID)**: Probabilidade **cai** ou estagna com a idade. Mutuários com hipotecas antigas (que já pagaram muitos juros) resistiram a refinanciar, apesar de ser matematicamente vantajoso.
