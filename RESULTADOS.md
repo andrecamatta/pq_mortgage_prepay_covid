@@ -41,6 +41,15 @@ O gráfico abaixo mostra como a relação entre **Incentivo** e **Probabilidade 
     - **Shift Vertical**: Mesmo com incentivo zero, a probabilidade é maior (fatores não-financeiros).
     - **Inclinação Menor**: O mercado ficou "saturado" ou restrito (capacidade operacional), respondendo menos marginalmente a incentivos extremos.
 
+> **⚠️ Nota sobre o "Excesso de 5%":**
+> 
+> Visualmente, a diferença entre as curvas parece grande. Porém, o "excesso de 5% além de juros" refere-se à **média ponderada** na região onde os dados COVID realmente estavam concentrados (incentivos altos, lado direito do gráfico). Nessa região, as curvas **convergem** devido ao termo de interação negativo (`covid_incentive = -0.26`).
+> 
+> - **No ponto médio COVID (incentivo ≈ 0.89%)**: O efeito líquido é `+1.12 + (-0.26 × 0.89) ≈ +0.89 logit` (~2.4x odds).
+> - **Mas o modelo M0 (sem dummy)** já prevê prepay alto via o incentivo puro. O "5%" é o que M0 *ainda não captura*.
+> 
+> Em resumo: o gráfico mostra o modelo **M2** (que modela COVID explicitamente). O "5% de excesso" compara **Observado vs M0** (que só usa incentivos).
+
 ---
 
 ## 3. Metodologia e Modelagem
